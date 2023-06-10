@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 def get_norm_layer(norm_type='batch'):
+    if norm_type == None:
+        return None
     norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
     return norm_layer
 
@@ -17,17 +19,17 @@ def weights_init_xavier(m):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0.0)
 
-def define_encoder(input_nc, output_nc, ndf, model_name, norm='batch', init_type='xavier', gpu_ids=[], vaeLike=True):
+def define_E(input_nc, output_nc, ndf, model_name, norm='batch', init_type='xavier', gpu_ids=[], vaeLike=True):
     encoder = None
     use_gpu = len(gpu_ids) > 0
-    norm_layer = get_norm_layer(norm_type=norm)
-    non_linearity = nn.LeakyReLU(negative_slope=0.2, inplace=True)
+    norm_layer = get_norm_layer(norm_type=None)
+    non_linearity = functools.partial(nn.LeakyReLU, negative_slope=0.2, inplace=True)
     if use_gpu:
         assert(torch.cuda.is_available())
     if model_name == 'resnet_128':
-        encoder = ResnetEncoder(input_nc, output_nc, ndf, norm_layer, 4, non_linearity, gpu_ids, vaeLike)
+        encoder = ResnetEncoder(input_nc, output_nc, ndf, 4, norm_layer, non_linearity, gpu_ids, vaeLike)
     elif model_name == 'resnet_256':
-        encoder = ResnetEncoder(input_nc, output_nc, ndf, norm_layer, 5, non_linearity, gpu_ids, vaeLike)
+        encoder = ResnetEncoder(input_nc, output_nc, ndf, 5, norm_layer, non_linearity, gpu_ids, vaeLike)
     else:
         raise NotImplementedError('Encoder model name [%s] is not recognized' % model_name)
     
@@ -58,7 +60,7 @@ class BasicBlock(nn.Module):
         if norm_layer is not None:
             layers += [norm_layer(inplanes)]
         layers += [nl_layer()]
-        layers += nn.Sequential(*[nn.Conv2d(inplanes, outplanes, kernel_size=3, stride=1, padding=1, bias=True)])
+        layers += nn.Sequential(*[nn.Conv2d(inplanes, inplanes, kernel_size=3, stride=1, padding=1, bias=True)])
         if norm_layer is not None:
             layers += [norm_layer(inplanes)]
         layers += [nl_layer()]
@@ -67,7 +69,10 @@ class BasicBlock(nn.Module):
         self.shortcut = meanpoolConv(inplanes, outplanes)
 
     def forward(self, x):
-        out = self.conv(x) + self.shortcut(x)
+        print(self.conv)
+        print(x.shape)
+        out = self.conv(x)
+        out += self.shortcut(x)
         return out
 
     

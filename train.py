@@ -20,7 +20,7 @@ class TrainAnimatingLandscape():
         self.gpu = int(args.gpu)
         self.frame_interval = 2 #Used to omit pairs of distant frames from learning
         self.unchanged_pair_threshold = 0.02 #Used to omit less changed pairs from learning
-        self.dir_list = glob.glob(args.indir + '/*')
+        self.dir_list = glob.glob(args.indir + '/*' + '/*')
         print("The number of training video clips:", len(self.dir_list))
         self.saved_epoch = int(args.save_epoch_freq)
         self.max_epoch = int(args.max_epoch)
@@ -43,7 +43,7 @@ class TrainAnimatingLandscape():
         
     def TrainMotionModels(self):
         
-        model_E = define_E(2,self.nz,64,which_model_netE='resnet_128')
+        model_E = define_E(2,self.nz,64,model_name='resnet_128')
         if self.gpu>-1:
             model_E.cuda(self.gpu)
         optimizer_E = Adam(model_E.parameters(),  lr=self.learning_rate, betas=(0.5, 0.999))   
@@ -59,7 +59,8 @@ class TrainAnimatingLandscape():
                 model_WAE_D.cuda(self.gpu)
             optimizer_WAE_D = Adam(model_WAE_D.parameters(),lr=self.learning_rate*0.1)
     
-        initial_flow = np.array([np.meshgrid(np.linspace(-1,1,self.w/1), np.linspace(-1,1,self.h/1), sparse=False)]).astype(np.float32)
+        # initial_flow = np.array([np.meshgrid(np.linspace(-1,1,self.w/1), np.linspace(-1,1,self.h/1), sparse=False)]).astype(np.float32)
+        initial_flow = np.array([np.meshgrid(np.linspace(-1, 1, int(self.w/1)), np.linspace(-1, 1, int(self.h/1)), sparse=False)]).astype(np.float32)
         initial_flow = Variable(torch.from_numpy(initial_flow))
         zero_flow = Variable(torch.zeros(initial_flow.shape))
         if self.gpu>-1:
@@ -74,7 +75,7 @@ class TrainAnimatingLandscape():
             sample_num = 0
             total_loss = 0.
             np.random.shuffle(self.dir_list)
-            for dir in self.dir_list:   
+            for dir in self.dir_list:
                 fnames = glob.glob(dir+"/*.jpg")
                 fnames.sort(key=util.natural_keys)            
                 frame_id = random.randint(0,len(fnames)-2)

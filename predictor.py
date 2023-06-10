@@ -59,7 +59,7 @@ class UpsampleConvLayer(nn.Module):
         x = self.conv(x)
         return x
 
-class MotionNet(nn.Module):
+class ConditionalMotionNet(nn.Module):
     def __init__(self, nz=8, nout=2, beta=1./64.) -> None:
         super().__init__()
         c_num = 128
@@ -115,7 +115,7 @@ class MotionNet(nn.Module):
 
         return out
 
-class AppearanceNet(nn.Module):
+class ConditionalAppearanceNet(nn.Module):
     def __init__(self, nz=8) -> None:
         super().__init__()
         c_num = 128
